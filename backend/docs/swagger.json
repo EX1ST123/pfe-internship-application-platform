@@ -1,0 +1,343 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Weekly application statistics",
+        "title": "PFE Application API",
+        "contact": {
+            "name": "API Support",
+            "email": "support@pfe.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/applications": {
+            "get": {
+                "description": "Retrieve a list of all PFE applications in descending order of creation",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "List all submitted applications",
+                "responses": {
+                    "200": {
+                        "description": "List of applications",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.ApplicationResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/apply": {
+            "post": {
+                "description": "Submit a complete PFE application with personal details and required documents",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Submit a new PFE application",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Applicant's full name",
+                        "name": "full_name",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Email address",
+                        "name": "email",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Gender (Male/Female/Other)",
+                        "name": "gender",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Phone number",
+                        "name": "phone",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Type of application (Internship/Project)",
+                        "name": "application_type",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "University name",
+                        "name": "university",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field of study",
+                        "name": "field_of_study",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Degree level (Bachelor/Master/PhD)",
+                        "name": "degree_level",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Duration of internship (3 months/6 months)",
+                        "name": "internship_duration",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Preferred working method (Onsite/Remote/Hybrid)",
+                        "name": "preferred_working_method",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Preferred start date (YYYY-MM-DD)",
+                        "name": "early_start_date",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "Subjects of interest (at least one required)",
+                        "name": "subjects",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "CV document (PDF only)",
+                        "name": "cv",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Motivation letter (PDF)",
+                        "name": "motivation",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Application submitted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/main.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "405": {
+                        "description": "Method not allowed",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/weekly-applications": {
+            "get": {
+                "description": "Returns the number of applications submitted since Monday of the current week",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "analytics"
+                ],
+                "summary": "Get count of applications submitted this week",
+                "responses": {
+                    "200": {
+                        "description": "Weekly applications count",
+                        "schema": {
+                            "$ref": "#/definitions/main.WeeklyStatsResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "main.ApplicationResponse": {
+            "description": "Detailed information about a PFE application",
+            "type": "object",
+            "properties": {
+                "application_type": {
+                    "type": "string",
+                    "example": "Internship"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-01-10"
+                },
+                "cv_file_path": {
+                    "type": "string",
+                    "example": "uploads/123456789_cv.pdf"
+                },
+                "degree_level": {
+                    "type": "string",
+                    "example": "Master"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                },
+                "field_of_study": {
+                    "type": "string",
+                    "example": "Computer Science"
+                },
+                "full_name": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "gender": {
+                    "type": "string",
+                    "example": "Male"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "internship_duration": {
+                    "type": "string",
+                    "example": "6 months"
+                },
+                "motivation_file_path": {
+                    "type": "string",
+                    "example": "uploads/123456789_motivation.pdf"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "+1234567890"
+                },
+                "preferred_working_method": {
+                    "type": "string",
+                    "example": "Remote"
+                },
+                "start_date": {
+                    "type": "string",
+                    "example": "2024-01-15"
+                },
+                "university": {
+                    "type": "string",
+                    "example": "University of Technology"
+                }
+            }
+        },
+        "main.ErrorResponse": {
+            "description": "Standard error response structure",
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "detailed error description"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "An error occurred"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": false
+                }
+            }
+        },
+        "main.SuccessResponse": {
+            "description": "Standard success response structure",
+            "type": "object",
+            "properties": {
+                "data": {},
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Operation completed successfully"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "main.WeeklyStatsResponse": {
+            "description": "Weekly application statistics",
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 15
+                },
+                "week_start": {
+                    "type": "string",
+                    "example": "2024-01-22"
+                }
+            }
+        }
+    }
+}
