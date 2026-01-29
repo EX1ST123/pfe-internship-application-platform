@@ -136,12 +136,16 @@ td {
   padding: 4px 10px;
   border-radius: 999px;
   font-size: 12px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .pill {
   padding: 4px 10px;
   border-radius: 999px;
   font-size: 12px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .pill.solo {
