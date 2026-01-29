@@ -137,7 +137,7 @@ td {
   border-radius: 999px;
   font-size: 12px;
   display: inline-flex;
-  align-items: center;
+  vertical-align: middle;
 }
 
 .pill {
@@ -145,7 +145,7 @@ td {
   border-radius: 999px;
   font-size: 12px;
   display: inline-flex;
-  align-items: center;
+  vertical-align: middle;
 }
 
 .pill.solo {
