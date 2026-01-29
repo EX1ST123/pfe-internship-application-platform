@@ -276,7 +276,7 @@ const filtered = useMemo(() => {
 
         <div className="page-size">
           <label>
-            Show{" "}
+            Applications per page {" "}
             <select
               value={pageSize}
               onChange={(e) => {
