@@ -7,7 +7,7 @@ body {
   margin: 0;
   background: #f8fafc;
   color: #0f172a;
- 
+  overflow-x: hidden;
 }
 
 /* HEADER */
@@ -128,6 +128,12 @@ input, select {
   padding: 10px 16px;
   border-radius: 8px;
   border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+  background: #1d4ed8;
 }
 
 .btn-secondary {
@@ -135,6 +141,12 @@ input, select {
   padding: 10px 16px;
   border-radius: 8px;
   border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-secondary:hover {
+  background: #e2e8f0;
 }
 
 .btn-submit {
@@ -145,6 +157,12 @@ input, select {
   border-radius: 12px;
   border: none;
   font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-submit:hover {
+  background: #1d4ed8;
 }
 
 main{

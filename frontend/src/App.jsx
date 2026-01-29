@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   BsMortarboardFill,
   BsPersonFill,
@@ -13,13 +13,39 @@ import {
 } from "react-icons/bs";
 
 export default function ApplyPage() {
+  const navigate = useNavigate();
   const [applicationType, setApplicationType] = useState("Solo");
   const [cvName, setCvName] = useState("");
   const [motivationName, setMotivationName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [subjects, setSubjects] = useState([]);
+  /* ===== AUTH STATE ===== */
+  const [user, setUser] = useState(null);
+  const [showAuth, setShowAuth] = useState(false);
+  const [authMode, setAuthMode] = useState("login");
+  const [authForm, setAuthForm] = useState({ role: "user" });
 
-  const validateForm = (formData) => {
+  useEffect(() => {
+    fetch("http://localhost:8080/subjects")
+      .then(res => res.json())
+      .then(setSubjects)
+      .catch(() => setSubjects([]));
+
+    // Check if user is logged in
+    fetch("http://localhost:8080/me", {
+      credentials: "include",
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.loggedIn) {
+          setUser(data);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const validateForm = async (formData) => {
     // Validate phone number (8 digits)
     const phone = formData.get("phone") || "";
     const phoneDigits = phone.replace(/\D/g, '');
@@ -32,6 +58,16 @@ export default function ApplyPage() {
     const email = formData.get("email") || "";
     if (!email.includes("@") || !email.includes(".") || email.indexOf("@") > email.lastIndexOf(".")) {
       alert("❌ Please enter a valid email address (example@domain.com)");
+      return false;
+    }
+    
+    const res = await fetch(
+      `http://localhost:8080/email-exists?email=${encodeURIComponent(email)}`
+    );
+    const data = await res.json();
+
+    if (data.exists) {
+      alert("❌ Email already used");
       return false;
     }
 
@@ -54,7 +90,7 @@ export default function ApplyPage() {
       alert("❌ Motivation letter must be a PDF file");
       return false;
     }
-
+    
     return true;
   };
 
@@ -66,7 +102,7 @@ export default function ApplyPage() {
     const formData = new FormData(form);
 
     // Validate form before submission
-    if (!validateForm(formData)) {
+    if (!(await validateForm(formData))) {
       return;
     }
 
@@ -99,19 +135,85 @@ export default function ApplyPage() {
     }
   };
 
+  const submitAuth = async () => {
+    const res = await fetch(
+      `http://localhost:8080/${authMode}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(authForm),
+      }
+    );
+
+    if (!res.ok) {
+      alert("❌ Authentication failed");
+      return;
+    }
+
+    const me = await fetch("http://localhost:8080/me", {
+      credentials: "include",
+    });
+    const data = await me.json();
+    setUser(data);
+    setShowAuth(false);
+    alert("✅ Success");
+    
+    // If user is admin, redirect to backoffice
+    if (data.role === "admin") {
+      navigate("/backoffice");
+    }
+  };
+
+  const handleBackofficeClick = () => {
+    if (user && user.role === "admin") {
+      navigate("/backoffice");
+    } else {
+      setAuthMode("login");
+      setShowAuth(true);
+    }
+  };
+
+  const handleLogout = async () => {
+    await fetch("http://localhost:8080/logout", {
+      method: "POST",
+      credentials: "include",
+    });
+    setUser(null);
+    alert("✅ Logged out successfully");
+  };
+
   return (
     <main>
       <header className="header">
         <div className="logo">
           <BsMortarboardFill /> PFE Portal
         </div>
-        <Link to="/backoffice" className="btn-primary">
-          HR Backoffice
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {user && user.loggedIn && (
+            <>
+              <span style={{ marginRight: '0.5rem' }}>
+                <strong>{user.username || 'User'}</strong>
+              </span>
+              <button onClick={handleLogout} className="btn-secondary">
+                Logout
+              </button>
+            </>
+          )}
+          {!user || !user.loggedIn ? (
+            <button onClick={handleBackofficeClick} className="btn-primary">
+              Log in
+            </button>
+          ) : user.role === "admin" ? (
+            <button onClick={handleBackofficeClick} className="btn-primary">
+              HR Backoffice
+            </button>
+          ) : null}
+        </div>
       </header>
 
       <section className="hero">
-        <span className="badge">Applications Open for 2025</span>
+        <span className="badge">Applications Open for 2026</span>
         <h1>
           Start Your Career Journey <br />
           with a <span>PFE Internship</span>
@@ -180,16 +282,21 @@ export default function ApplyPage() {
               <option>Remote</option>
               <option>Hybrid</option>
             </select>
-            <input type="date" name="early_start_date" required />
+            <input 
+              type="date" 
+              name="early_start_date" 
+              required 
+            />
           </div>
         </div>
 
         <div className="card">
           <h3><BsBookFill /> Application Subjects *</h3>
           <div className="subjects">
-            {["Web Development","Mobile Development","Data Science","Machine Learning","DevOps"].map((s) => (
-              <label key={s} className="subject-pill">
-                <input type="checkbox" name="subjects" value={s} /> {s}
+            {subjects.map(s => (
+              <label key={s.id} className="subject-pill">
+                <input type="checkbox" name="subjects" value={s.name} />
+                {s.name}
               </label>
             ))}
           </div>
@@ -216,6 +323,63 @@ export default function ApplyPage() {
           {submitting ? "Submitting..." : "Submit Application"}
         </button>
       </form>
+
+      {showAuth && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>{authMode === "signup" ? "Sign Up" : "Login"}</h3>
+
+            <input
+              placeholder="Username"
+              onChange={e => setAuthForm({ ...authForm, username: e.target.value })}
+            />
+
+            {authMode === "signup" && (
+              <>
+                <input
+                  placeholder="Email"
+                  onChange={e => setAuthForm({ ...authForm, email: e.target.value })}
+                />
+                <select
+                  onChange={e => setAuthForm({ ...authForm, role: e.target.value })}
+                >
+                  <option value="user">Student</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </>
+            )}
+
+            <input
+              type="password"
+              placeholder="Password"
+              onChange={e => setAuthForm({ ...authForm, password: e.target.value })}
+            />
+
+            <button className="btn-primary" onClick={submitAuth}>
+              Submit
+            </button>
+
+            <p
+              style={{ cursor: "pointer", marginTop: 10 }}
+              onClick={() =>
+                setAuthMode(authMode === "signup" ? "login" : "signup")
+              }
+            >
+              {authMode === "signup"
+                ? "Already have an account?"
+                : "Don't have an account?"}
+            </p>
+
+            <button
+              style={{ marginTop: 10 }}
+              className="btn-secondary"
+              onClick={() => setShowAuth(false)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
