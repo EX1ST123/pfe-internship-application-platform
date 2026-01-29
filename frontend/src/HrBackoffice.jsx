@@ -608,13 +608,13 @@ const filtered = useMemo(() => {
                         href={`http://localhost:8080/${a.cv_file_path}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="action-link"
+                        className="btn-primary"
                       >
                         View
                       </a>
                       <button
                         onClick={() => handleDownloadCV(a.cv_file_path, a.full_name)}
-                        className="action-link"
+                        className="btn-edit"
                         
                       >
                         Download

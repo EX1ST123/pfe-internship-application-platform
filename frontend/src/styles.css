@@ -130,10 +130,12 @@ input, select {
   border: none;
   cursor: pointer;
   transition: background-color 0.2s;
+  text-decoration: none;
 }
 
 .btn-primary:hover {
   background: #1d4ed8;
+  
 }
 
 .btn-secondary {

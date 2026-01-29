@@ -118,7 +118,6 @@ func main() {
 	http.HandleFunc("/subjects", subjectsHandler)
 	http.HandleFunc("/subjects/delete", deleteSubjects)
 	http.HandleFunc("/weekly-applications", authRequired("admin", weeklyApplications))
-
 	http.HandleFunc("/uploads/", serveFile)
 
 	fmt.Println("API running on http://localhost:8080")
