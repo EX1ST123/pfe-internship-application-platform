@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ApplyPage from "./App";
-import HrBackoffice from "./HRBackoffice";
+import HrBackoffice from "./HrBackoffice";
 import { AuthProvider } from "./AuthContext";
 import "./styles.css";
 
