@@ -38,7 +38,7 @@ type ApplicationResponse struct {
 }
 
 func enableCORS(w http.ResponseWriter) {
-	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3005")
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Access-Control-Allow-Methods", "PUT, GET, POST, DELETE, OPTIONS")
@@ -95,9 +95,7 @@ func authRequired(role string, next http.HandlerFunc) http.HandlerFunc {
 
 func main() {
 	var err error
-	db, err = sql.Open("postgres",
-		"host=localhost port=5432 user=postgres password=postgres dbname=pfe sslmode=disable",
-	)
+	db, err = sql.Open("postgres", os.Getenv("DATABASE_URL"))
 	if err != nil {
 		panic(err)
 	}

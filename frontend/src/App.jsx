@@ -25,25 +25,24 @@ export default function ApplyPage() {
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState("login");
   const [authForm, setAuthForm] = useState({ role: "user" });
+useEffect(() => {
+  fetch("http://localhost:8080/subjects")
+    .then(res => res.json())
+    .then(data => setSubjects(data || []))  // ← Ensure it's always an array
+    .catch(() => setSubjects([]));
 
-  useEffect(() => {
-    fetch("http://localhost:8080/subjects")
-      .then(res => res.json())
-      .then(setSubjects)
-      .catch(() => setSubjects([]));
-
-    // Check if user is logged in
-    fetch("http://localhost:8080/me", {
-      credentials: "include",
+  // Check if user is logged in
+  fetch("http://localhost:8080/me", {
+    credentials: "include",
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.loggedIn) {
+        setUser(data);
+      }
     })
-      .then(res => res.json())
-      .then(data => {
-        if (data.loggedIn) {
-          setUser(data);
-        }
-      })
-      .catch(() => {});
-  }, []);
+    .catch(() => {});
+}, []);
 
   const validateForm = async (formData) => {
     // Validate phone number (8 digits)
@@ -293,12 +292,16 @@ export default function ApplyPage() {
         <div className="card">
           <h3><BsBookFill /> Application Subjects *</h3>
           <div className="subjects">
-            {subjects.map(s => (
+            {subjects && subjects.length > 0 ? (
+              subjects.map(s => (
               <label key={s.id} className="subject-pill">
                 <input type="checkbox" name="subjects" value={s.name} />
                 {s.name}
               </label>
-            ))}
+              ))
+          ) : (
+              <p>No subjects available</p>)
+          }
           </div>
         </div>
 

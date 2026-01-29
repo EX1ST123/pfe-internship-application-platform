@@ -1,5 +1,4 @@
 version: "3.9"
-
 services:
   db:
     image: postgres:16
@@ -12,7 +11,7 @@ services:
       - pgdata:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-
+      
   backend:
     build: ./backend
     container_name: go-backend
@@ -22,14 +21,16 @@ services:
       DATABASE_URL: postgres://postgres:postgres@db:5432/pfe?sslmode=disable
     ports:
       - "8080:8080"
-
+      
   frontend:
     build: ./frontend
     container_name: react-frontend
     depends_on:
       - backend
+    environment:
+      - REACT_APP_API_URL=http://localhost:8080
     ports:
       - "3005:80"
-
+      
 volumes:
   pgdata:
