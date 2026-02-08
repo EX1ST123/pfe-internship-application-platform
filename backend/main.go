@@ -1,3 +1,21 @@
+// @title Internship Application API
+// @version 1.0
+// @description API for managing internship applications, subjects, and authentication
+// @termsOfService http://example.com/terms/
+
+// @contact.name API Support
+// @contact.email support@example.com
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8080
+// @BasePath /
+
+// @securityDefinitions.apikey SessionAuth
+// @in cookie
+// @name auth
+
 package main
 
 import (
@@ -10,6 +28,10 @@ import (
 	"os"
 	"time"
 
+	_ "backend/docs"
+
+	httpSwagger "github.com/swaggo/http-swagger"
+
 	"github.com/gorilla/sessions"
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
@@ -19,6 +41,7 @@ import (
 var db *sql.DB
 var store = sessions.NewCookieStore([]byte("super-secret-key"))
 
+// ApplicationResponse represents an internship application
 type ApplicationResponse struct {
 	ID                     int      `json:"id"`
 	FullName               string   `json:"full_name"`
@@ -132,6 +155,7 @@ func main() {
 	http.HandleFunc("/subjects/delete", authRequired("admin", deleteSubjects))
 	http.HandleFunc("/weekly-applications", authRequired("admin", weeklyApplications))
 	http.HandleFunc("/uploads/", corsMiddleware(serveFile))
+	http.Handle("/swagger/", httpSwagger.WrapHandler)
 
 	log.Println("API running on http://localhost:8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
@@ -153,6 +177,18 @@ func weeklyApplications(w http.ResponseWriter, r *http.Request) {
 	}
 	respondJSON(w, map[string]int{"count": count}, http.StatusOK)
 }
+
+// signup godoc
+// @Summary Create a new user
+// @Description Register a new user account
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param body body object{username=string,email=string,password=string,role=string} true "User payload"
+// @Success 201
+// @Failure 400 {string} string
+// @Failure 409 {string} string
+// @Router /signup [post]
 
 func signup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -201,6 +237,16 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+// login godoc
+// @Summary Login
+// @Description Authenticate user and create session
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param body body object{username=string,password=string} true "Login payload"
+// @Success 200 {object} map[string]bool
+// @Failure 401 {string} string
+// @Router /login [post]
 func login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		respondError(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -271,6 +317,13 @@ func logout(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, map[string]bool{"success": true}, http.StatusOK)
 }
 
+// me godoc
+// @Summary Current user info
+// @Description Returns current logged-in user
+// @Tags Auth
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Router /me [get]
 func me(w http.ResponseWriter, r *http.Request) {
 	session, err := store.Get(r, "auth")
 	if err != nil {
@@ -292,6 +345,20 @@ func me(w http.ResponseWriter, r *http.Request) {
 	}, http.StatusOK)
 }
 
+// applyHandler godoc
+// @Summary Submit application
+// @Description Submit internship application with files
+// @Tags Applications
+// @Accept multipart/form-data
+// @Produce json
+// @Param full_name formData string true "Full name"
+// @Param email formData string true "Email"
+// @Param cv formData file true "CV PDF"
+// @Param motivation formData file false "Motivation letter"
+// @Param subjects formData []string false "Subjects"
+// @Success 201 {object} map[string]interface{}
+// @Failure 400 {string} string
+// @Router /apply [post]
 func applyHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		respondError(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -407,6 +474,15 @@ func applyHandler(w http.ResponseWriter, r *http.Request) {
 	}, http.StatusCreated)
 }
 
+// listApplications godoc
+// @Summary List applications
+// @Description Admin: list all applications
+// @Tags Admin
+// @Produce json
+// @Security SessionAuth
+// @Success 200 {array} ApplicationResponse
+// @Failure 403 {string} string
+// @Router /applications [get]
 func listApplications(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query(`
 		SELECT id, full_name, email, gender, phone, university,
@@ -466,6 +542,13 @@ func listApplications(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, result, http.StatusOK)
 }
 
+// subjectsHandler godoc
+// @Summary Manage subjects
+// @Description Get, create, or update subjects
+// @Tags Subjects
+// @Produce json
+// @Success 200 {array} map[string]interface{}
+// @Router /subjects [get]
 func subjectsHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:

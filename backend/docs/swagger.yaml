@@ -1,243 +1,189 @@
 basePath: /
 definitions:
   main.ApplicationResponse:
-    description: Detailed information about a PFE application
     properties:
       application_type:
-        example: Internship
         type: string
       created_at:
-        example: "2024-01-10"
         type: string
       cv_file_path:
-        example: uploads/123456789_cv.pdf
         type: string
       degree_level:
-        example: Master
         type: string
       email:
-        example: john@example.com
         type: string
       field_of_study:
-        example: Computer Science
         type: string
       full_name:
-        example: John Doe
         type: string
       gender:
-        example: Male
         type: string
       id:
-        example: 1
         type: integer
       internship_duration:
-        example: 6 months
         type: string
       motivation_file_path:
-        example: uploads/123456789_motivation.pdf
         type: string
       phone:
-        example: "+1234567890"
         type: string
       preferred_working_method:
-        example: Remote
         type: string
       start_date:
-        example: "2024-01-15"
         type: string
+      subjects:
+        items:
+          type: string
+        type: array
       university:
-        example: University of Technology
-        type: string
-    type: object
-  main.ErrorResponse:
-    description: Standard error response structure
-    properties:
-      error:
-        example: detailed error description
-        type: string
-      message:
-        example: An error occurred
-        type: string
-      success:
-        example: false
-        type: boolean
-    type: object
-  main.SuccessResponse:
-    description: Standard success response structure
-    properties:
-      data: {}
-      id:
-        example: 1
-        type: integer
-      message:
-        example: Operation completed successfully
-        type: string
-      success:
-        example: true
-        type: boolean
-    type: object
-  main.WeeklyStatsResponse:
-    description: Weekly application statistics
-    properties:
-      count:
-        example: 15
-        type: integer
-      week_start:
-        example: "2024-01-22"
         type: string
     type: object
 host: localhost:8080
 info:
   contact:
-    email: support@pfe.com
+    email: support@example.com
     name: API Support
-  description: Weekly application statistics
+  description: API for managing internship applications, subjects, and authentication
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
-  title: PFE Application API
+  termsOfService: http://example.com/terms/
+  title: Internship Application API
   version: "1.0"
 paths:
   /applications:
     get:
-      consumes:
-      - application/json
-      description: Retrieve a list of all PFE applications in descending order of
-        creation
+      description: 'Admin: list all applications'
       produces:
       - application/json
       responses:
         "200":
-          description: List of applications
+          description: OK
           schema:
             items:
               $ref: '#/definitions/main.ApplicationResponse'
             type: array
-        "500":
-          description: Internal server error
+        "403":
+          description: Forbidden
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: List all submitted applications
+            type: string
+      security:
+      - SessionAuth: []
+      summary: List applications
       tags:
-      - applications
+      - Admin
   /apply:
     post:
       consumes:
       - multipart/form-data
-      description: Submit a complete PFE application with personal details and required
-        documents
+      description: Submit internship application with files
       parameters:
-      - description: Applicant's full name
+      - description: Full name
         in: formData
         name: full_name
         required: true
         type: string
-      - description: Email address
+      - description: Email
         in: formData
         name: email
         required: true
         type: string
-      - description: Gender (Male/Female/Other)
-        in: formData
-        name: gender
-        required: true
-        type: string
-      - description: Phone number
-        in: formData
-        name: phone
-        required: true
-        type: string
-      - description: Type of application (Internship/Project)
-        in: formData
-        name: application_type
-        required: true
-        type: string
-      - description: University name
-        in: formData
-        name: university
-        required: true
-        type: string
-      - description: Field of study
-        in: formData
-        name: field_of_study
-        required: true
-        type: string
-      - description: Degree level (Bachelor/Master/PhD)
-        in: formData
-        name: degree_level
-        required: true
-        type: string
-      - description: Duration of internship (3 months/6 months)
-        in: formData
-        name: internship_duration
-        required: true
-        type: string
-      - description: Preferred working method (Onsite/Remote/Hybrid)
-        in: formData
-        name: preferred_working_method
-        required: true
-        type: string
-      - description: Preferred start date (YYYY-MM-DD)
-        in: formData
-        name: early_start_date
-        type: string
-      - collectionFormat: multi
-        description: Subjects of interest (at least one required)
-        in: formData
-        items:
-          type: string
-        name: subjects
-        required: true
-        type: array
-      - description: CV document (PDF only)
+      - description: CV PDF
         in: formData
         name: cv
         required: true
         type: file
-      - description: Motivation letter (PDF)
+      - description: Motivation letter
         in: formData
         name: motivation
         type: file
+      - collectionFormat: csv
+        description: Subjects
+        in: formData
+        items:
+          type: string
+        name: subjects
+        type: array
       produces:
       - application/json
       responses:
         "201":
-          description: Application submitted successfully
+          description: Created
           schema:
-            $ref: '#/definitions/main.SuccessResponse'
+            additionalProperties: true
+            type: object
         "400":
-          description: Bad request
+          description: Bad Request
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "405":
-          description: Method not allowed
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Submit a new PFE application
+            type: string
+      summary: Submit application
       tags:
-      - applications
-  /weekly-applications:
-    get:
+      - Applications
+  /login:
+    post:
       consumes:
       - application/json
-      description: Returns the number of applications submitted since Monday of the
-        current week
+      description: Authenticate user and create session
+      parameters:
+      - description: Login payload
+        in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            password:
+              type: string
+            username:
+              type: string
+          type: object
       produces:
       - application/json
       responses:
         "200":
-          description: Weekly applications count
+          description: OK
           schema:
-            $ref: '#/definitions/main.WeeklyStatsResponse'
-        "500":
-          description: Internal server error
+            additionalProperties:
+              type: boolean
+            type: object
+        "401":
+          description: Unauthorized
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Get count of applications submitted this week
+            type: string
+      summary: Login
       tags:
-      - analytics
+      - Auth
+  /me:
+    get:
+      description: Returns current logged-in user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Current user info
+      tags:
+      - Auth
+  /subjects:
+    get:
+      description: Get, create, or update subjects
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+      summary: Manage subjects
+      tags:
+      - Subjects
+securityDefinitions:
+  SessionAuth:
+    in: cookie
+    name: auth
+    type: apiKey
 swagger: "2.0"

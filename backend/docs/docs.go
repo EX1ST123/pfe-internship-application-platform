@@ -9,9 +9,10 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
+        "termsOfService": "http://example.com/terms/",
         "contact": {
             "name": "API Support",
-            "email": "support@pfe.com"
+            "email": "support@example.com"
         },
         "license": {
             "name": "MIT",
@@ -24,20 +25,22 @@ const docTemplate = `{
     "paths": {
         "/applications": {
             "get": {
-                "description": "Retrieve a list of all PFE applications in descending order of creation",
-                "consumes": [
-                    "application/json"
+                "security": [
+                    {
+                        "SessionAuth": []
+                    }
                 ],
+                "description": "Admin: list all applications",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "applications"
+                    "Admin"
                 ],
-                "summary": "List all submitted applications",
+                "summary": "List applications",
                 "responses": {
                     "200": {
-                        "description": "List of applications",
+                        "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -45,10 +48,10 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "500": {
-                        "description": "Internal server error",
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "type": "string"
                         }
                     }
                 }
@@ -56,7 +59,7 @@ const docTemplate = `{
         },
         "/apply": {
             "post": {
-                "description": "Submit a complete PFE application with personal details and required documents",
+                "description": "Submit internship application with files",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -64,84 +67,35 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "applications"
+                    "Applications"
                 ],
-                "summary": "Submit a new PFE application",
+                "summary": "Submit application",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Applicant's full name",
+                        "description": "Full name",
                         "name": "full_name",
                         "in": "formData",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "Email address",
+                        "description": "Email",
                         "name": "email",
                         "in": "formData",
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "Gender (Male/Female/Other)",
-                        "name": "gender",
+                        "type": "file",
+                        "description": "CV PDF",
+                        "name": "cv",
                         "in": "formData",
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "Phone number",
-                        "name": "phone",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Type of application (Internship/Project)",
-                        "name": "application_type",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "University name",
-                        "name": "university",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Field of study",
-                        "name": "field_of_study",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Degree level (Bachelor/Master/PhD)",
-                        "name": "degree_level",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Duration of internship (3 months/6 months)",
-                        "name": "internship_duration",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Preferred working method (Onsite/Remote/Hybrid)",
-                        "name": "preferred_working_method",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Preferred start date (YYYY-MM-DD)",
-                        "name": "early_start_date",
+                        "type": "file",
+                        "description": "Motivation letter",
+                        "name": "motivation",
                         "in": "formData"
                     },
                     {
@@ -149,57 +103,32 @@ const docTemplate = `{
                         "items": {
                             "type": "string"
                         },
-                        "collectionFormat": "multi",
-                        "description": "Subjects of interest (at least one required)",
+                        "collectionFormat": "csv",
+                        "description": "Subjects",
                         "name": "subjects",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "file",
-                        "description": "CV document (PDF only)",
-                        "name": "cv",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "file",
-                        "description": "Motivation letter (PDF)",
-                        "name": "motivation",
                         "in": "formData"
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "Application submitted successfully",
+                        "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/main.SuccessResponse"
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Bad request",
+                        "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "405": {
-                        "description": "Method not allowed",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "type": "string"
                         }
                     }
                 }
             }
         },
-        "/weekly-applications": {
-            "get": {
-                "description": "Returns the number of applications submitted since Monday of the current week",
+        "/login": {
+            "post": {
+                "description": "Authenticate user and create session",
                 "consumes": [
                     "application/json"
                 ],
@@ -207,20 +136,87 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "analytics"
+                    "Auth"
                 ],
-                "summary": "Get count of applications submitted this week",
+                "summary": "Login",
+                "parameters": [
+                    {
+                        "description": "Login payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "password": {
+                                    "type": "string"
+                                },
+                                "username": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Weekly applications count",
+                        "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.WeeklyStatsResponse"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "boolean"
+                            }
                         }
                     },
-                    "500": {
-                        "description": "Internal server error",
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/me": {
+            "get": {
+                "description": "Returns current logged-in user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Current user info",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/subjects": {
+            "get": {
+                "description": "Get, create, or update subjects",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subjects"
+                ],
+                "summary": "Manage subjects",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
                         }
                     }
                 }
@@ -229,121 +225,67 @@ const docTemplate = `{
     },
     "definitions": {
         "main.ApplicationResponse": {
-            "description": "Detailed information about a PFE application",
             "type": "object",
             "properties": {
                 "application_type": {
-                    "type": "string",
-                    "example": "Internship"
+                    "type": "string"
                 },
                 "created_at": {
-                    "type": "string",
-                    "example": "2024-01-10"
+                    "type": "string"
                 },
                 "cv_file_path": {
-                    "type": "string",
-                    "example": "uploads/123456789_cv.pdf"
+                    "type": "string"
                 },
                 "degree_level": {
-                    "type": "string",
-                    "example": "Master"
+                    "type": "string"
                 },
                 "email": {
-                    "type": "string",
-                    "example": "john@example.com"
+                    "type": "string"
                 },
                 "field_of_study": {
-                    "type": "string",
-                    "example": "Computer Science"
+                    "type": "string"
                 },
                 "full_name": {
-                    "type": "string",
-                    "example": "John Doe"
+                    "type": "string"
                 },
                 "gender": {
-                    "type": "string",
-                    "example": "Male"
+                    "type": "string"
                 },
                 "id": {
-                    "type": "integer",
-                    "example": 1
+                    "type": "integer"
                 },
                 "internship_duration": {
-                    "type": "string",
-                    "example": "6 months"
+                    "type": "string"
                 },
                 "motivation_file_path": {
-                    "type": "string",
-                    "example": "uploads/123456789_motivation.pdf"
+                    "type": "string"
                 },
                 "phone": {
-                    "type": "string",
-                    "example": "+1234567890"
+                    "type": "string"
                 },
                 "preferred_working_method": {
-                    "type": "string",
-                    "example": "Remote"
+                    "type": "string"
                 },
                 "start_date": {
-                    "type": "string",
-                    "example": "2024-01-15"
+                    "type": "string"
+                },
+                "subjects": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "university": {
-                    "type": "string",
-                    "example": "University of Technology"
+                    "type": "string"
                 }
             }
-        },
-        "main.ErrorResponse": {
-            "description": "Standard error response structure",
-            "type": "object",
-            "properties": {
-                "error": {
-                    "type": "string",
-                    "example": "detailed error description"
-                },
-                "message": {
-                    "type": "string",
-                    "example": "An error occurred"
-                },
-                "success": {
-                    "type": "boolean",
-                    "example": false
-                }
-            }
-        },
-        "main.SuccessResponse": {
-            "description": "Standard success response structure",
-            "type": "object",
-            "properties": {
-                "data": {},
-                "id": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "message": {
-                    "type": "string",
-                    "example": "Operation completed successfully"
-                },
-                "success": {
-                    "type": "boolean",
-                    "example": true
-                }
-            }
-        },
-        "main.WeeklyStatsResponse": {
-            "description": "Weekly application statistics",
-            "type": "object",
-            "properties": {
-                "count": {
-                    "type": "integer",
-                    "example": 15
-                },
-                "week_start": {
-                    "type": "string",
-                    "example": "2024-01-22"
-                }
-            }
+        }
+    },
+    "securityDefinitions": {
+        "SessionAuth": {
+            "type": "apiKey",
+            "name": "auth",
+            "in": "cookie"
         }
     }
 }`
@@ -354,8 +296,8 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "localhost:8080",
 	BasePath:         "/",
 	Schemes:          []string{},
-	Title:            "PFE Application API",
-	Description:      "Weekly application statistics",
+	Title:            "Internship Application API",
+	Description:      "API for managing internship applications, subjects, and authentication",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",
