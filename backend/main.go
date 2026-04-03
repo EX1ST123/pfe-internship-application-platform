@@ -41,7 +41,6 @@ import (
 var db *sql.DB
 var store = sessions.NewCookieStore([]byte("super-secret-key"))
 
-// ApplicationResponse represents an internship application
 type ApplicationResponse struct {
 	ID                     int      `json:"id"`
 	FullName               string   `json:"full_name"`
@@ -166,9 +165,9 @@ func main() {
 func weeklyApplications(w http.ResponseWriter, r *http.Request) {
 	var count int
 	err := db.QueryRow(`
-		SELECT COUNT(*) FROM applications
-		WHERE created_at >= DATE_TRUNC('week', NOW())
-	`).Scan(&count)
+        SELECT COUNT(*) FROM applications
+        WHERE created_at >= DATE_TRUNC('week', NOW())
+    `).Scan(&count)
 
 	if err != nil {
 		log.Printf("Error getting weekly applications: %v", err)
@@ -177,18 +176,6 @@ func weeklyApplications(w http.ResponseWriter, r *http.Request) {
 	}
 	respondJSON(w, map[string]int{"count": count}, http.StatusOK)
 }
-
-// signup godoc
-// @Summary Create a new user
-// @Description Register a new user account
-// @Tags Auth
-// @Accept json
-// @Produce json
-// @Param body body object{username=string,email=string,password=string,role=string} true "User payload"
-// @Success 201
-// @Failure 400 {string} string
-// @Failure 409 {string} string
-// @Router /signup [post]
 
 func signup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -221,9 +208,9 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err = db.Exec(`
-		INSERT INTO users (username, email, password_hash, role)
-		VALUES ($1, $2, $3, $4)
-	`, body.Username, body.Email, string(hash), body.Role)
+        INSERT INTO users (username, email, password_hash, role)
+        VALUES ($1, $2, $3, $4)
+    `, body.Username, body.Email, string(hash), body.Role)
 
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
@@ -237,16 +224,6 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-// login godoc
-// @Summary Login
-// @Description Authenticate user and create session
-// @Tags Auth
-// @Accept json
-// @Produce json
-// @Param body body object{username=string,password=string} true "Login payload"
-// @Success 200 {object} map[string]bool
-// @Failure 401 {string} string
-// @Router /login [post]
 func login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		respondError(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -271,8 +248,8 @@ func login(w http.ResponseWriter, r *http.Request) {
 	var id int
 	var hash, role, username string
 	err := db.QueryRow(`
-		SELECT id, password_hash, role, username FROM users WHERE username=$1
-	`, body.Username).Scan(&id, &hash, &role, &username)
+        SELECT id, password_hash, role, username FROM users WHERE username=$1
+    `, body.Username).Scan(&id, &hash, &role, &username)
 
 	if err == sql.ErrNoRows {
 		respondError(w, "Invalid credentials", http.StatusUnauthorized)
@@ -317,13 +294,6 @@ func logout(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, map[string]bool{"success": true}, http.StatusOK)
 }
 
-// me godoc
-// @Summary Current user info
-// @Description Returns current logged-in user
-// @Tags Auth
-// @Produce json
-// @Success 200 {object} map[string]interface{}
-// @Router /me [get]
 func me(w http.ResponseWriter, r *http.Request) {
 	session, err := store.Get(r, "auth")
 	if err != nil {
@@ -345,20 +315,6 @@ func me(w http.ResponseWriter, r *http.Request) {
 	}, http.StatusOK)
 }
 
-// applyHandler godoc
-// @Summary Submit application
-// @Description Submit internship application with files
-// @Tags Applications
-// @Accept multipart/form-data
-// @Produce json
-// @Param full_name formData string true "Full name"
-// @Param email formData string true "Email"
-// @Param cv formData file true "CV PDF"
-// @Param motivation formData file false "Motivation letter"
-// @Param subjects formData []string false "Subjects"
-// @Success 201 {object} map[string]interface{}
-// @Failure 400 {string} string
-// @Router /apply [post]
 func applyHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		respondError(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -431,14 +387,14 @@ func applyHandler(w http.ResponseWriter, r *http.Request) {
 
 	var appID int
 	err = db.QueryRow(`
-		INSERT INTO applications (
-			full_name, gender, email, phone, university,
-			field_of_study, degree_level, application_type,
-			internship_duration, preferred_working_method,
-			start_date, cv_file_path, motivation_file_path
-		)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
-		RETURNING id`,
+        INSERT INTO applications (
+            full_name, gender, email, phone, university,
+            field_of_study, degree_level, application_type,
+            internship_duration, preferred_working_method,
+            start_date, cv_file_path, motivation_file_path
+        )
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+        RETURNING id`,
 		r.FormValue("full_name"),
 		r.FormValue("gender"),
 		email,
@@ -464,7 +420,7 @@ func applyHandler(w http.ResponseWriter, r *http.Request) {
 		var subjectID int
 		err := db.QueryRow(`SELECT id FROM subjects WHERE name=$1`, subjectName).Scan(&subjectID)
 		if err == nil {
-			db.Exec(`INSERT INTO application_subjects VALUES ($1,$2)`, appID, subjectID)
+			db.Exec(`INSERT INTO application_subjects (app_id, subject_id) VALUES ($1,$2)`, appID, subjectID)
 		}
 	}
 
@@ -474,44 +430,43 @@ func applyHandler(w http.ResponseWriter, r *http.Request) {
 	}, http.StatusCreated)
 }
 
-// listApplications godoc
-// @Summary List applications
-// @Description Admin: list all applications
-// @Tags Admin
-// @Produce json
-// @Security SessionAuth
-// @Success 200 {array} ApplicationResponse
-// @Failure 403 {string} string
-// @Router /applications [get]
+// listApplications optimisée avec jointures et ARRAY_AGG
 func listApplications(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query(`
-		SELECT id, full_name, email, gender, phone, university,
-		field_of_study, degree_level, application_type,
-		internship_duration, preferred_working_method,
-		start_date, created_at, cv_file_path, motivation_file_path
-		FROM applications ORDER BY created_at DESC
-	`)
+	query := `
+        SELECT a.id, a.full_name, a.email, a.gender, a.phone, a.university,
+               a.field_of_study, a.degree_level, a.application_type,
+               a.internship_duration, a.preferred_working_method,
+               a.start_date, a.created_at, a.cv_file_path, a.motivation_file_path,
+               COALESCE(ARRAY_AGG(s.name) FILTER (WHERE s.name IS NOT NULL), '{}') as subjects
+        FROM applications a
+        LEFT JOIN application_subjects asub ON a.id = asub.app_id
+        LEFT JOIN subjects s ON asub.subject_id = s.id
+        GROUP BY a.id
+        ORDER BY a.created_at DESC`
+
+	rows, err := db.Query(query)
 	if err != nil {
 		log.Printf("Error fetching applications: %v", err)
-		respondError(w, "Database error", http.StatusInternalServerError)
+		respondError(w, "Erreur de base de données", http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
 
 	var result []ApplicationResponse
-
 	for rows.Next() {
 		var a ApplicationResponse
 		var start sql.NullTime
 		var created time.Time
 
-		if err := rows.Scan(
+		err := rows.Scan(
 			&a.ID, &a.FullName, &a.Email, &a.Gender, &a.Phone,
 			&a.University, &a.FieldOfStudy, &a.DegreeLevel,
 			&a.ApplicationType, &a.InternshipDuration,
 			&a.PreferredWorkingMethod, &start,
 			&created, &a.CVFilePath, &a.MotivationFilePath,
-		); err != nil {
+			pq.Array(&a.Subjects),
+		)
+		if err != nil {
 			log.Printf("Error scanning application: %v", err)
 			continue
 		}
@@ -521,34 +476,12 @@ func listApplications(w http.ResponseWriter, r *http.Request) {
 			s := start.Time.Format("2006-01-02")
 			a.StartDate = &s
 		}
-
-		subRows, err := db.Query(`
-			SELECT s.name FROM subjects s
-			JOIN application_subjects a ON a.subject_id=s.id
-			WHERE a.application_id=$1`, a.ID)
-
-		if err == nil {
-			defer subRows.Close()
-			for subRows.Next() {
-				var name string
-				if err := subRows.Scan(&name); err == nil {
-					a.Subjects = append(a.Subjects, name)
-				}
-			}
-		}
 		result = append(result, a)
 	}
 
 	respondJSON(w, result, http.StatusOK)
 }
 
-// subjectsHandler godoc
-// @Summary Manage subjects
-// @Description Get, create, or update subjects
-// @Tags Subjects
-// @Produce json
-// @Success 200 {array} map[string]interface{}
-// @Router /subjects [get]
 func subjectsHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -652,10 +585,10 @@ func deleteSubjects(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rows, err := db.Query(`
-			SELECT DISTINCT subject_id
-			FROM application_subjects
-			WHERE subject_id = ANY($1)
-		`, pq.Array(payload.IDs))
+            SELECT DISTINCT subject_id
+            FROM application_subjects
+            WHERE subject_id = ANY($1)
+        `, pq.Array(payload.IDs))
 	if err != nil {
 		log.Printf("Error checking subject usage: %v", err)
 		respondError(w, "Database error", http.StatusInternalServerError)
@@ -687,8 +620,8 @@ func deleteSubjects(w http.ResponseWriter, r *http.Request) {
 
 	if len(deletable) > 0 {
 		if _, err := tx.Exec(`
-			DELETE FROM subjects WHERE id = ANY($1)
-		`, pq.Array(deletable)); err != nil {
+            DELETE FROM subjects WHERE id = ANY($1)
+        `, pq.Array(deletable)); err != nil {
 			log.Printf("Error deleting subjects: %v", err)
 			respondError(w, "Database error", http.StatusInternalServerError)
 			return
