@@ -433,16 +433,16 @@ func applyHandler(w http.ResponseWriter, r *http.Request) {
 // listApplications optimisée avec jointures et ARRAY_AGG
 func listApplications(w http.ResponseWriter, r *http.Request) {
 	query := `
-        SELECT a.id, a.full_name, a.email, a.gender, a.phone, a.university,
-               a.field_of_study, a.degree_level, a.application_type,
-               a.internship_duration, a.preferred_working_method,
-               a.start_date, a.created_at, a.cv_file_path, a.motivation_file_path,
-               COALESCE(ARRAY_AGG(s.name) FILTER (WHERE s.name IS NOT NULL), '{}') as subjects
-        FROM applications a
-        LEFT JOIN application_subjects asub ON a.id = asub.app_id
-        LEFT JOIN subjects s ON asub.subject_id = s.id
-        GROUP BY a.id
-        ORDER BY a.created_at DESC`
+    SELECT a.id, a.full_name, a.email, a.gender, a.phone, a.university,
+           a.field_of_study, a.degree_level, a.application_type,
+           a.internship_duration, a.preferred_working_method,
+           a.start_date, a.created_at, a.cv_file_path, a.motivation_file_path,
+           COALESCE(ARRAY_AGG(s.name) FILTER (WHERE s.name IS NOT NULL), '{}') as subjects
+    FROM applications a
+    LEFT JOIN application_subjects asub ON a.id = asub.application_id
+    LEFT JOIN subjects s ON asub.subject_id = s.id
+    GROUP BY a.id
+    ORDER BY a.created_at DESC`
 
 	rows, err := db.Query(query)
 	if err != nil {
